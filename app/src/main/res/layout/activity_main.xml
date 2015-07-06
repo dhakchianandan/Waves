@@ -1,0 +1,51 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:background="@android:color/darker_gray"
+        android:layout_height="50dp"
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true"
+        android:id="@+id/player">
+
+        <ImageView
+            android:id="@+id/app_icon"
+            android:layout_width="50dp"
+            android:padding="5dp"
+            android:layout_alignParentLeft="true"
+            android:layout_height="fill_parent"
+            android:src="@drawable/ic_icon"/>
+
+        <TextView
+            android:layout_height="fill_parent"
+            android:padding="5dp"
+            android:id="@+id/playing_station"
+            android:layout_width="match_parent"
+            android:layout_toRightOf="@+id/app_icon"
+            android:layout_toLeftOf="@+id/player_controls" />
+
+        <ImageButton
+            android:id="@+id/player_controls"
+            android:layout_width="50dp"
+            android:layout_height="fill_parent"
+            android:src="@drawable/ic_play_circle"
+            android:background="@drawable/button_style"
+            android:scaleType="centerCrop"
+            android:padding="3dp"
+            android:clickable="true"
+            android:layout_alignParentRight="true"/>
+
+    </RelativeLayout>
+
+    <android.support.v7.widget.RecyclerView
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/radios_view"
+        android:layout_above="@id/player">
+
+    </android.support.v7.widget.RecyclerView>
+
+</RelativeLayout>
