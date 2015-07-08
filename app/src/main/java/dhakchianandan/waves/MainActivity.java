@@ -7,6 +7,8 @@ import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -19,6 +21,7 @@ import org.w3c.dom.Text;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Handler;
 
 import dhakchianandan.waves.adapter.RadioAdapter;
 import dhakchianandan.waves.model.Radio;
@@ -36,6 +39,7 @@ public class MainActivity extends ActionBarActivity {
 
         final ImageButton playerControl = (ImageButton) findViewById(R.id.player_controls);
         final TextView playingStation = (TextView) findViewById(R.id.playing_station);
+        final TextView playerStatus = (TextView) findViewById(R.id.player_status);
         populateStations(radios);
 
         RecyclerView radiosView = (RecyclerView) findViewById(R.id.radios_view);
@@ -49,13 +53,18 @@ public class MainActivity extends ActionBarActivity {
         radioAdapter.setListener(new RadioAdapter.Listener() {
             @Override
             public void onClick(int position) {
+                if(!NetworkUtils.getConnectionStatus(getApplicationContext())) {
+                    handleNetworkError(playerControl, playerStatus);
+                    return;
+                }
                 Radio radio = radios.get(position);
-                if(!IS_RADIO_SELECTED) IS_RADIO_SELECTED = true;
+                if (!IS_RADIO_SELECTED) IS_RADIO_SELECTED = true;
                 playerControl.setImageResource(R.drawable.ic_pause_circle);
                 player.reset();
                 try {
                     player.setDataSource(radio.getUrl());
-                    playingStation.setText("Playing \n" + radio.getName());
+                    playingStation.setText(radio.getName());
+                    playerStatus.setText(R.string.playing);
                     player.prepareAsync();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -85,29 +94,88 @@ public class MainActivity extends ActionBarActivity {
         playerControl.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(IS_RADIO_SELECTED) {
+                if(!NetworkUtils.getConnectionStatus(getApplicationContext())) {
+                    handleNetworkError(playerControl, playerStatus);
+                    return;
+                }
+                if (IS_RADIO_SELECTED) {
                     if (player.isPlaying()) {
                         playerControl.setImageResource(R.drawable.ic_play_circle);
+                        playerStatus.setText(R.string.play);
                         player.pause();
                     } else {
                         playerControl.setImageResource(R.drawable.ic_pause_circle);
+                        playerStatus.setText(R.string.playing);
                         player.start();
                     }
                 } else {
                     Radio radio = getRadio();
+//                    player.stop();
                     player.reset();
                     IS_RADIO_SELECTED = true;
                     try {
                         player.setDataSource(radio.getUrl());
-                        playingStation.setText("Playing \n" + radio.getName());
+                        playingStation.setText(radio.getName());
                         player.prepareAsync();
                         playerControl.setImageResource(R.drawable.ic_pause_circle);
+                        playerStatus.setText(R.string.playing);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
             }
         });
+
+        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+
+        PhoneStateListener phoneStateListener = new PhoneStateListener(){
+            @Override
+            public void onCallStateChanged(int state, String incomingNumber) {
+                if(!NetworkUtils.getConnectionStatus(getApplicationContext())) {
+                    handleNetworkError(playerControl, playerStatus);
+                    super.onCallStateChanged(state, incomingNumber);
+                    return;
+                }
+                switch (state) {
+                    case TelephonyManager.CALL_STATE_RINGING:
+                    case TelephonyManager.CALL_STATE_OFFHOOK:
+                        if(player != null) {
+                            if(player.isPlaying()) {
+                                player.pause();
+                                playerControl.setImageResource(R.drawable.ic_play_circle);
+                                playerStatus.setText(R.string.play);
+                            }
+                        }
+                        break;
+                    case TelephonyManager.CALL_STATE_IDLE:
+                        if(player != null && IS_RADIO_SELECTED) {
+                            android.os.Handler handler = new android.os.Handler();
+                            handler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    player.start();
+                                    playerStatus.setText(R.string.playing);
+                                    playerControl.setImageResource(R.drawable.ic_pause_circle);
+                                }
+                            }, 2000);
+                        }
+                        break;
+
+                }
+                super.onCallStateChanged(state, incomingNumber);
+            }
+        };
+
+        if(telephonyManager != null) {
+            telephonyManager.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
+        }
+    }
+
+    private void handleNetworkError(ImageButton playerControl, TextView playerStatus) {
+        Toast.makeText(getApplicationContext(), "Network not available", Toast.LENGTH_SHORT).show();
+        if(player != null && player.isPlaying()) player.stop();
+        playerControl.setImageResource(R.drawable.ic_play_circle);
+        playerStatus.setText(R.string.play);
     }
 
     @Override

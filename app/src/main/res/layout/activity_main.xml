@@ -19,13 +19,31 @@
             android:layout_height="fill_parent"
             android:src="@drawable/ic_icon"/>
 
-        <TextView
-            android:layout_height="fill_parent"
-            android:padding="5dp"
-            android:id="@+id/playing_station"
+        <RelativeLayout
             android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:layout_toRightOf="@+id/app_icon"
-            android:layout_toLeftOf="@+id/player_controls" />
+            android:layout_toLeftOf="@+id/player_controls">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="4dp"
+                android:paddingLeft="4dp"
+                android:paddingBottom="3dp"
+                android:id="@+id/player_status"
+                android:text="@string/play"/>
+
+            <TextView
+                android:layout_height="fill_parent"
+                android:paddingLeft="4dp"
+                android:paddingBottom="4dp"
+                android:layout_below="@+id/player_status"
+                android:id="@+id/playing_station"
+                android:text="@string/initial_station"
+                android:layout_width="match_parent" />
+
+        </RelativeLayout>
 
         <ImageButton
             android:id="@+id/player_controls"
